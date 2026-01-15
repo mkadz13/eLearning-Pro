@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Education Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .navbar h1 {
+            font-size: 1.5em;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .content-list {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .content-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .content-item:last-child {
+            border-bottom: none;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <h1>📚 Education Platform Dashboard</h1>
+        <div class="user-info">
+            <span id="userName">Loading...</span>
+            <button class="btn btn-primary" onclick="logout()">Logout</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="cards">
+            <div class="card">
+                <h3>Browse Content</h3>
+                <p>Explore available courses and materials</p>
+                <button class="btn btn-primary" onclick="loadContent()" style="margin-top: 15px;">Load Content</button>
+            </div>
+            
+            <div class="card">
+                <h3>Categories</h3>
+                <p>View content categories</p>
+                <button class="btn btn-primary" onclick="loadCategories()" style="margin-top: 15px;">View Categories</button>
+            </div>
+            
+            <div class="card">
+                <h3>My Profile</h3>
+                <p>View your account information</p>
+                <button class="btn btn-primary" onclick="loadProfile()" style="margin-top: 15px;">View Profile</button>
+            </div>
+        </div>
+        
+        <div class="content-list">
+            <h2 style="margin-bottom: 20px;">Content</h2>
+            <div id="contentList">
+                <p style="color: #999; text-align: center; padding: 20px;">Click "Load Content" to see available courses</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let accessToken = localStorage.getItem('accessToken');
+        let user = JSON.parse(localStorage.getItem('user') || '{}');
+        
+        if (!accessToken) {
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('userName').textContent = user.full_name || 'User';
+        
+        function logout() {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('user');
+            window.location.href = 'index.html';
+        }
+        
+        async function loadContent() {
+            try {
+                const response = await fetch(`${API_BASE}/content`);
+                const data = await response.json();
+                
+                const list = document.getElementById('contentList');
+                if (data.content && data.content.length > 0) {
+                    list.innerHTML = data.content.map(item => `
+                        <div class="content-item">
+                            <div>
+                                <strong>${item.title}</strong>
+                                <p style="color: #666; margin-top: 5px;">${item.description.substring(0, 100)}...</p>
+                                <span class="badge ${item.is_free ? 'badge-success' : 'badge-info'}">
+                                    ${item.is_free ? 'FREE' : `$${item.price}`}
+                                </span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No content available yet</p>';
+                }
+            } catch (error) {
+                alert('Error loading content: ' + error.message);
+            }
+        }
+        
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categories`);
+                const data = await response.json();
+                alert(`Found ${data.categories.length} categories:\n${data.categories.map(c => c.name).join(', ')}`);
+            } catch (error) {
+                alert('Error loading categories: ' + error.message);
+            }
+        }
+        
+        async function loadProfile() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                const data = await response.json();
+                alert(`Profile:\n\nName: ${data.full_name}\nUsername: ${data.username}\nRole: ${data.role}\nEmail: ${data.email || 'N/A'}`);
+            } catch (error) {
+                alert('Error loading profile: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
+
